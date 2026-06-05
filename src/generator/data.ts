@@ -122,6 +122,8 @@ export async function loadData(locale: "enus"): Promise<GeneratorInput> {
   profile.load(
     readFile(`_locales/${locale}.w3mod/units/campaignupgradestrings.txt`)
   );
+  profile.load(readFile(`units/campaignabilityfunc.txt`));
+
 
   const unitAndItemMeta = new MappedData();
   unitAndItemMeta.load(readFile("units/unitmetadata.slk"));

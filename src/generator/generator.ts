@@ -293,6 +293,9 @@ function generateObjects(
           if (value.startsWith("WESTRING")) {
             value = weStrings.string(value);
           }
+          if(prop.field.toLocaleLowerCase().includes("buttonpos") && value?.indexOf(",") != -1){
+            value = prop.name.endsWith("X") ? value![0] : value![2];
+          }
 
           try {
             object[prop.name] = war3ToTS(prop.type, value);
