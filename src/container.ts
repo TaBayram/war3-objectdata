@@ -39,20 +39,20 @@ export function objectLoader<T extends IDs>(
       const specific = specificProps[object.oldId];
 
       if (!specific) {
-        throw Error(`INVALID OLD ID FOR ABILITY ${object.oldId} ${id}`);
+        //throw Error(`INVALID OLD ID FOR ABILITY ${object.oldId} ${id}`);
+        continue;
       }
 
       prop = getProp(id, specific);
     }
 
     if (!prop) {
-      throw Error(
-        `Failed to get an Ability prop: ${object.oldId}:${object.newId} => ${id}`
-      );
+      //throw Error(        `Failed to get an Ability prop: ${object.oldId}:${object.newId} => ${id}`      );
+      continue;
     }
 
-    if(modification.levelOrVariation > 1) {
-      if(!(<any>object).levelProps[modification.levelOrVariation]) {
+    if ((<any>object).levelProps && modification.levelOrVariation > 1) {
+      if (!(<any>object).levelProps[modification.levelOrVariation]) {
         (<any>object).levelProps[modification.levelOrVariation] = {};
       }
       (<any>object).levelProps[modification.levelOrVariation][prop.name] = war3ToTS(prop.type, value);
@@ -65,11 +65,11 @@ export function objectLoader<T extends IDs>(
 }
 
 export function objectSaver<T extends IDs>(
-    gameObject: T,
-    object: T,
-    baseProps: Prop[],
-    skin: boolean,
-    specificProps?: { [key: string]: Prop[] }
+  gameObject: T,
+  object: T,
+  baseProps: Prop[],
+  skin: boolean,
+  specificProps?: { [key: string]: Prop[] }
 ): Modification[] {
   const modifications: Modification[] = [];
 
@@ -83,13 +83,13 @@ export function objectSaver<T extends IDs>(
         }
 
         const modification = tsToWar3(prop, targetObj[prop.name]);
-        if(level) {
+        if (level) {
           modification.levelOrVariation = level;
         }
         modification.dataPointer = prop.dataPointer || 0;
 
         modifications.push(
-            modification
+          modification
         );
       }
     }

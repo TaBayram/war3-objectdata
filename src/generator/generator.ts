@@ -66,7 +66,7 @@ function generateTSInterface(name: string, props: Prop[]): string {
   const outBaseProps = props
     .map(
       (prop) =>
-        `{ id: <const>'${prop.id}', name: <const>'${prop.name}', type: <const>'${prop.type}', netsafe: <const>'${<string>prop.row.string("netsafe") === "1"}' }`
+        `{ id: <const>'${prop.id}', name: <const>'${prop.name}', type: <const>'${prop.type}', field: <const>'${prop.field}', netsafe: <const>'${<string>prop.row.string("netsafe") === "1"}' }`
     )
     .join(", ");
 
@@ -78,7 +78,7 @@ function generateTSAbilityInterfaces(
   objects: OEObjects,
   props: Prop[]
 ) {
-  const [ baseProps, baseLevelProps ] = props.reduce<[Prop[], Prop[]]>((all, prop) => {
+  const [baseProps, baseLevelProps] = props.reduce<[Prop[], Prop[]]>((all, prop) => {
     if (!prop.specific) {
       all[Number(prop.row.string('repeat')) > 0 ? 1 : 0].push(prop);
     }
@@ -105,7 +105,7 @@ function generateTSAbilityInterfaces(
   const outBaseProps = [...baseProps, ...baseLevelProps]
     .map(
       (prop) =>
-        `{ id: <const>'${prop.id}', name: <const>'${prop.name}', type: <const>'${prop.type}', levelDependant: <const>${Number(prop.row.string('repeat') || 0) > 0}, dataPointer: <const>${Number(prop.row.string('data') || 0)}, netsafe: <const>'${<string>prop.row.string("netsafe") === "1"}' }`
+        `{ id: <const>'${prop.id}', name: <const>'${prop.name}', type: <const>'${prop.type}', field: <const>'${prop.field}', levelDependant: <const>${Number(prop.row.string('repeat') || 0) > 0}, dataPointer: <const>${Number(prop.row.string('data') || 0)}, netsafe: <const>'${<string>prop.row.string("netsafe") === "1"}' }`
     )
     .join(", ");
   const outProps: Record<string, string> = {};
@@ -113,34 +113,34 @@ function generateTSAbilityInterfaces(
 
   for (const object of Object.values(objects)) {
     const id = <string>object["oldId"];
-    const lookupId = <string>(object['lookupId'] !== undefined ? object['lookupId']: object["oldId"]);
+    const lookupId = <string>(object['lookupId'] !== undefined ? object['lookupId'] : object["oldId"]);
     const abilityProps = props.filter(
       (prop) => prop.specific && (prop.specific.includes(lookupId) || prop.specific.includes(id))
     );
     let objectName = getOEObjectName(object, objects[lookupId]);
-        if (objectName) {
-            if (usedNames[objectName]) {
-                objectName = getOEObjectName(object, objects[lookupId], true);
-            }
-            usedNames[objectName as string] = true;
-        }
+    if (objectName) {
+      if (usedNames[objectName]) {
+        objectName = getOEObjectName(object, objects[lookupId], true);
+      }
+      usedNames[objectName as string] = true;
+    }
 
-  if (abilityProps.length) {
+    if (abilityProps.length) {
       interfaces.push(
         `  export interface ${objectName}<L extends number = 1> extends ${name}<L> {\n${abilityProps
-                    .map((prop) => `    ${prop.name}: ${prop.tsType};`)
-                    .join("\n")}
+          .map((prop) => `    ${prop.name}: ${prop.tsType};`)
+          .join("\n")}
     levelProps: Record<LevelKeys<L>, Partial<LevelDependantProps & {\n${abilityProps
-                    .map((prop) => `        ${prop.name}: ${prop.tsType};`)
-                    .join("\n")}
+          .map((prop) => `        ${prop.name}: ${prop.tsType};`)
+          .join("\n")}
     }>>;
   }`
       );
 
-    outProps[id] = abilityProps
+      outProps[id] = abilityProps
         .map(
           (prop) =>
-            `{ id: <const>'${prop.id}', name: <const>'${prop.name}', type: <const>'${prop.type}', levelDependant: <const>${Number(prop.row.string('repeat') || 0) > 0}, dataPointer: <const>${Number(prop.row.string('data') || 0)}, netsafe: <const>'${<string>prop.row.string("netsafe") === "1"}' }`
+            `{ id: <const>'${prop.id}', name: <const>'${prop.name}', type: <const>'${prop.type}', field: <const>'${prop.field + (prop.field == "Data" ? String.fromCharCode(64 + (parseInt(prop.id.slice(-1)) || 1)) : '')}', levelDependant: <const>${Number(prop.row.string('repeat') || 0) > 0}, dataPointer: <const>${Number(prop.row.string('data') || 0)}, netsafe: <const>'${<string>prop.row.string("netsafe") === "1"}' }`
         )
         .join(", ");
     } else {
@@ -156,10 +156,10 @@ ${baseLevelInterface}
 type LevelKeys<L extends number> = L extends L ? number extends L ? never : Exclude<\`\${L}\`, '1'> : never;
 
 interface ${name}<L extends number = 1> extends IDs {\n${baseInterface}\n};\n\nexport namespace ${name}Types {\n${interfaces.join(
-        "\n\n"
-    )}\n};\n\nexport const ${name}Props = [ ${outBaseProps} ];\nexport const ${name}SpecificProps = {\n${Object.entries(
-        outProps
-    )
+    "\n\n"
+  )}\n};\n\nexport const ${name}Props = [ ${outBaseProps} ];\nexport const ${name}SpecificProps = {\n${Object.entries(
+    outProps
+  )
     .map(([id, props]) => `  ${id}: [${props}],`)
     .join("\n")}\n};`;
 }
@@ -245,62 +245,62 @@ function generateObjects(
   for (let [id, row] of Object.entries(data.map)) {
     const object: OEObject = {};
     const alias = row.string('alias');
-    const parentId =  row.string('code')
+    const parentId = row.string('code')
     let lookupId = alias !== undefined && parentId !== undefined && alias !== parentId ? parentId : id;
     id = handleWrongCapitalization(id);
     lookupId = handleWrongCapitalization(lookupId);
-    if(lookupId !== id) {
+    if (lookupId !== id) {
       object['lookupId'] = lookupId
     }
     const levelProps: Record<number, OEObject> = {}
     for (const prop of props) {
-        let value;
+      let value;
 
-        // Check if the property is level-dependent
-        const repeatFlag = prop.row.string('repeat')
-        if (repeatFlag && parseInt(repeatFlag) > 0) {
-            // Handle level-dependent properties
-            const maxLevels = parseInt(row.string('levels') || '1');
-          for (let level = 1; level <= maxLevels; level++) {
-            const levelField = `${prop.field}${level}`;
-            const value = row.string(levelField);
-            if (value !== undefined) {
-              if (level === 1) {
-                // Assign the value of the first level directly to the object
-                object[prop.name] = value;
-              } else {
-                // Ensure the level object exists in levelProps
-                levelProps[level] = levelProps[level] || {};
-                // Assign the value for subsequent levels to levelProps
-                levelProps[level][prop.name] = value;
-              }
+      // Check if the property is level-dependent
+      const repeatFlag = prop.row.string('repeat')
+      if (repeatFlag && parseInt(repeatFlag) > 0) {
+        // Handle level-dependent properties
+        const maxLevels = parseInt(row.string('levels') || '1');
+        for (let level = 1; level <= maxLevels; level++) {
+          const levelField = `${prop.field}${level}`;
+          const value = row.string(levelField);
+          if (value !== undefined) {
+            if (level === 1) {
+              // Assign the value of the first level directly to the object
+              object[prop.name] = value;
+            } else {
+              // Ensure the level object exists in levelProps
+              levelProps[level] = levelProps[level] || {};
+              // Assign the value for subsequent levels to levelProps
+              levelProps[level][prop.name] = value;
             }
           }
-        } else {
-            // Handle non-level-dependent properties
-            if (prop.profile) {
-                const profileRow = profile.getRow(id);
-                if (profileRow) {
-                    value = profileRow.string(prop.field.toLowerCase());
-                }
-            } else {
-                value = row.string(prop.field);
-            }
-
-            if (value === undefined) {
-                object[prop.name] = war3ToDefaultTS(prop.type);
-            } else {
-                if (value.startsWith("WESTRING")) {
-                    value = weStrings.string(value);
-                }
-
-                try {
-                    object[prop.name] = war3ToTS(prop.type, value);
-                } catch (e) {
-                    console.log("FAILED TO CONVERT WAR3 TO TS", id, prop.id, prop.name, value, typeof value);
-                }
-            }
         }
+      } else {
+        // Handle non-level-dependent properties
+        if (prop.profile) {
+          const profileRow = profile.getRow(id);
+          if (profileRow) {
+            value = profileRow.string(prop.field.toLowerCase());
+          }
+        } else {
+          value = row.string(prop.field);
+        }
+
+        if (value === undefined) {
+          object[prop.name] = war3ToDefaultTS(prop.type);
+        } else {
+          if (value.startsWith("WESTRING")) {
+            value = weStrings.string(value);
+          }
+
+          try {
+            object[prop.name] = war3ToTS(prop.type, value);
+          } catch (e) {
+            console.log("FAILED TO CONVERT WAR3 TO TS", id, prop.id, prop.name, value, typeof value);
+          }
+        }
+      }
     }
 
     // Some objects seem to have no real data.
@@ -313,11 +313,18 @@ function generateObjects(
       // Not needed, but makes stuff more consistent with the map data.
       object["oldId"] = id;
       object["newId"] = "\0\0\0\0";
-      if(row.string('levels') !== undefined) { // Check if it is an ability
+      if (row.string('levels') !== undefined) { // Check if it is an ability
         object['levelProps'] = levelProps
       }
       objects[id] = object;
     } else {
+      object["oldId"] = id;
+      object["newId"] = "\0\0\0\0";
+      if (row.string('levels') !== undefined) { // Check if it is an ability
+        object['levelProps'] = levelProps
+      }
+      object["name"] = id;
+      objects[id] = object;
       console.log("Found no name for object", id);
     }
   }
@@ -367,8 +374,12 @@ function generateOutput(
     [
       `import { readFileSync } from 'fs';`,
       `import { IDs, Container } from '../container';`,
+      `// @ts-ignore`,
+      `const jsonData = require('./${fileName}data.json');`,
     ].join("\n"),
-    `const OBJECTS = Object.freeze(JSON.parse(readFileSync(\`\${__dirname}/${fileName}data.json\`, 'utf8')));
+    `
+
+const OBJECTS = Object.freeze(jsonData);
 for (const object of Object.values(OBJECTS)) {
   Object.freeze(object);
 }`,
