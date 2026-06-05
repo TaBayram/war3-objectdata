@@ -293,7 +293,7 @@ function generateObjects(
           if (value.startsWith("WESTRING")) {
             value = weStrings.string(value);
           }
-          if(prop.field.toLocaleLowerCase().includes("buttonpos") && value?.indexOf(",") != -1){
+          if (prop.field.toLocaleLowerCase().includes("buttonpos") && value?.indexOf(",") != -1) {
             value = prop.name.endsWith("X") ? value![0] : value![2];
           }
 
@@ -320,15 +320,20 @@ function generateObjects(
         object['levelProps'] = levelProps
       }
       objects[id] = object;
-    } else {
+    } else if (profile.getRow(id)?.string("name")) {
       object["oldId"] = id;
       object["newId"] = "\0\0\0\0";
       if (row.string('levels') !== undefined) { // Check if it is an ability
         object['levelProps'] = levelProps
       }
-      object["name"] = id;
       objects[id] = object;
-      console.log("Found no name for object", id);
+
+      object["name"] = profile.getRow(id)?.string("name")!;
+
+      //console.log("Found the name in profile for object", id);
+    }else{
+      
+      console.error("Found no name for object", id);
     }
   }
 
