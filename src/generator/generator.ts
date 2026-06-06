@@ -50,7 +50,7 @@ function generateProps(metaData: MappedData, weStrings: MappedDataRow): Prop[] {
     // Upgrade fields share the same name.
     const conflict = props.find((prop) => prop.name === name);
     if (conflict) {
-      name += <string>row.string("effecttype");
+      name += (<string>row.string("effecttype") ?? id);
     }
 
     props.push({ id, row, field, type, tsType, name, profile, specific });
@@ -117,6 +117,7 @@ function generateTSAbilityInterfaces(
     const abilityProps = props.filter(
       (prop) => prop.specific && (prop.specific.includes(lookupId) || prop.specific.includes(id))
     );
+    if(abilityProps.filter((x)=> x.id == "Crs").length != 0) debugger;
     let objectName = getOEObjectName(object, objects[lookupId]);
     if (objectName) {
       if (usedNames[objectName]) {
@@ -255,7 +256,6 @@ function generateObjects(
     const levelProps: Record<number, OEObject> = {}
     for (const prop of props) {
       let value;
-
       // Check if the property is level-dependent
       const repeatFlag = prop.row.string('repeat')
       if (repeatFlag && parseInt(repeatFlag) > 0) {
@@ -315,14 +315,14 @@ function generateObjects(
     ) {
       // Not needed, but makes stuff more consistent with the map data.
       object["oldId"] = id;
-      object["newId"] = "\0\0\0\0";
+      object["newId"] = "0000";
       if (row.string('levels') !== undefined) { // Check if it is an ability
         object['levelProps'] = levelProps
       }
       objects[id] = object;
     } else if (profile.getRow(id)?.string("name")) {
       object["oldId"] = id;
-      object["newId"] = "\0\0\0\0";
+      object["newId"] = "0000";
       if (row.string('levels') !== undefined) { // Check if it is an ability
         object['levelProps'] = levelProps
       }

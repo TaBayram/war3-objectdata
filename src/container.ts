@@ -39,15 +39,14 @@ export function objectLoader<T extends IDs>(
       const specific = specificProps[object.oldId];
 
       if (!specific) {
-        //throw Error(`INVALID OLD ID FOR ABILITY ${object.oldId} ${id}`);
+        console.warn(`INVALID OLD ID FOR ABILITY ${object.oldId} ${id}`);
         continue;
       }
-
       prop = getProp(id, specific);
     }
 
     if (!prop) {
-      //throw Error(        `Failed to get an Ability prop: ${object.oldId}:${object.newId} => ${id}`      );
+      console.warn(`Failed to get an Ability prop: ${object.oldId}:${object.newId} => ${id}`);
       continue;
     }
 
@@ -123,7 +122,7 @@ function loadObject<T extends IDs, E>(
   specificProps?: { [key: string]: Prop[] }
 ) {
   let objectId;
-  if (newId === "\0\0\0\0") {
+  if (newId === "0000") {
     objectId = oldId;
   } else {
     objectId = newId;
@@ -193,7 +192,7 @@ export function save<T extends IDs, E>(
       modifiedObject.newId = object.newId;
       pushArray(modifiedObject.modifications, modifications);
 
-      if (object.newId === "\0\0\0\0") {
+      if (object.newId === "0000") {
         original.push(modifiedObject);
       } else {
         custom.push(modifiedObject);
@@ -228,7 +227,7 @@ export abstract class Container<T extends IDs> {
 
       // If this object exists in the game data, copy it and add it to the map data in case it is modified by the caller.
       if (gameObject) {
-        object = JSON.parse(JSON.stringify({ ...gameObject, oldId: id, newId: "\0\0\0\0" }))
+        object = JSON.parse(JSON.stringify({ ...gameObject, oldId: id, newId: "0000" }))
 
         this.map[id] = object;
       }
