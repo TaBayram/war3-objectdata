@@ -10,7 +10,9 @@
     "build": "npm run generate && npm run compile",
     "prepublishOnly": "npm run build",
     "test": "ts-node test/main.ts",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "pack": "npm run build & npm pack",
+    "deploy": "powershell -ExecutionPolicy Bypass -File deploy.ps1"
   },
   "repository": {
     "type": "git",

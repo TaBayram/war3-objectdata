@@ -3,3 +3,5 @@ node_modules
 objectdata
 src
 test
+deploy.ps1
+*.tgz
