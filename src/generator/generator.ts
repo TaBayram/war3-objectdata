@@ -53,7 +53,10 @@ function generateProps(metaData: MappedData, weStrings: MappedDataRow): Prop[] {
       name += (<string>row.string("effecttype") ?? id);
     }
 
-    props.push({ id, row, field, type, tsType, name, profile, specific });
+    // Crs fix
+    let newId = id.padEnd(4, '\u0000');
+
+    props.push({ id: newId, row, field, type, tsType, name, profile, specific });
   }
 
   return props;
