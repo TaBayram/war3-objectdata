@@ -270,7 +270,7 @@ function generateObjects(
         const maxLevels = parseInt(row.string('levels') || '1');
         for (let level = 1; level <= maxLevels; level++) {
           const levelField = `${prop.field}${prop.field == "Data" ? handleAbilityDataPropAlphabet(prop) : ''}${level}`;
-          const value = row.string(levelField);
+          const value = row.string(levelField) ?? profile.getRow(id)?.string(prop.field.toLowerCase());
           if (value !== undefined) {
             if (level === 1) {
               // Assign the value of the first level directly to the object
