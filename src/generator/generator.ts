@@ -168,10 +168,6 @@ interface ${name}<L extends number = 1> extends IDs {\n${baseInterface}\n};\n\ne
 }
 
 function handleAbilityDataPropAlphabet(prop: Prop) {
-  const idNumber = parseInt(prop.id.slice(-1));
-  if (!isNaN(idNumber)) {
-    return String.fromCharCode(64 + idNumber);
-  }
   const data = prop.row.number("data")
   return String.fromCharCode(64 + data);
 }
