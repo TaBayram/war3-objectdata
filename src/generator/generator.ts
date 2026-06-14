@@ -120,7 +120,6 @@ function generateTSAbilityInterfaces(
     const abilityProps = props.filter(
       (prop) => prop.specific && (prop.specific.includes(lookupId) || prop.specific.includes(id))
     );
-    if(abilityProps.filter((x)=> x.id == "Crs").length != 0) debugger;
     let objectName = getOEObjectName(object, objects[lookupId]);
     if (objectName) {
       if (usedNames[objectName]) {
@@ -144,7 +143,7 @@ function generateTSAbilityInterfaces(
       outProps[id] = abilityProps
         .map(
           (prop) =>
-            `{ id: <const>'${prop.id}', name: <const>'${prop.name}', type: <const>'${prop.type}', field: <const>'${prop.field + (prop.field == "Data" ? String.fromCharCode(64 + (parseInt(prop.id.slice(-1)) || 1)) : '')}', levelDependant: <const>${Number(prop.row.string('repeat') || 0) > 0}, dataPointer: <const>${Number(prop.row.string('data') || 0)}, netsafe: <const>'${<string>prop.row.string("netsafe") === "1"}' }`
+            `{ id: <const>'${prop.id}', name: <const>'${prop.name}', type: <const>'${prop.type}', field: <const>'${prop.field + (prop.field == "Data" ? handleAbilityDataPropAlphabet(prop) : '')}', levelDependant: <const>${Number(prop.row.string('repeat') || 0) > 0}, dataPointer: <const>${Number(prop.row.string('data') || 0)}, netsafe: <const>'${<string>prop.row.string("netsafe") === "1"}' }`
         )
         .join(", ");
     } else {
@@ -166,6 +165,15 @@ interface ${name}<L extends number = 1> extends IDs {\n${baseInterface}\n};\n\ne
   )
     .map(([id, props]) => `  ${id}: [${props}],`)
     .join("\n")}\n};`;
+}
+
+function handleAbilityDataPropAlphabet(prop: Prop) {
+  const idNumber = parseInt(prop.id.slice(-1));
+  if (!isNaN(idNumber)) {
+    return String.fromCharCode(64 + idNumber);
+  }
+  const data = prop.row.number("data")
+  return String.fromCharCode(64 + data);
 }
 
 function getOEObjectName(object: OEObject, parentObject?: OEObject, useRace?: boolean) {
@@ -334,8 +342,8 @@ function generateObjects(
       object["name"] = profile.getRow(id)?.string("name")!;
 
       //console.log("Found the name in profile for object", id);
-    }else{
-      
+    } else {
+
       console.error("Found no name for object", id);
     }
   }
