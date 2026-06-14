@@ -269,7 +269,7 @@ function generateObjects(
         // Handle level-dependent properties
         const maxLevels = parseInt(row.string('levels') || '1');
         for (let level = 1; level <= maxLevels; level++) {
-          const levelField = `${prop.field}${level}`;
+          const levelField = `${prop.field}${prop.field == "Data" ? handleAbilityDataPropAlphabet(prop) : ''}${level}`;
           const value = row.string(levelField);
           if (value !== undefined) {
             if (level === 1) {
