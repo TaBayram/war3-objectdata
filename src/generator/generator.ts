@@ -264,8 +264,9 @@ function generateTSEnum(name: string, objects: OEObjects, constant: boolean): st
     .join("\n")}\n}`;
 }
 
-function generateFieldTypeEnums(weStrings: MappedDataRow, neededTypes: Set<string>): string {
+function generateFieldTypeEnums(weStrings: MappedDataRow, neededTypes: Set<string>, constant: boolean = false): string {
   const enumDefs: string[] = [];
+  const constPrefix = constant ? 'const ' : '';
 
   for (const [war3Type, wePrefix] of Object.entries(TYPE_WE_PREFIX_MAP)) {
     if (!neededTypes.has(war3Type)) continue;
@@ -286,7 +287,7 @@ function generateFieldTypeEnums(weStrings: MappedDataRow, neededTypes: Set<strin
     }
 
     if (entries.length > 0) {
-      enumDefs.push(`export const enum ${tsName} {\n${entries
+      enumDefs.push(`export ${constPrefix}enum ${tsName} {\n${entries
         .map(e => `  ${e.name} = '${e.value}',`)
         .sort()
         .join('\n')}\n}`);
@@ -460,7 +461,8 @@ function generateOutput(
   }
 
   const neededEnumTypes = getNeededEnumTypes(props);
-  const fieldTypeEnums = generateFieldTypeEnums(weStrings, neededEnumTypes);
+  const fieldTypeEnums = generateFieldTypeEnums(weStrings, neededEnumTypes, false);
+  const constFieldTypeEnums = generateFieldTypeEnums(weStrings, neededEnumTypes, true);
 
   const tsContent = [
     [
@@ -481,7 +483,10 @@ for (const object of Object.values(OBJECTS)) {
     generateTSContainer(interfaceName, enumName),
   ].join("\n\n");
   const jsonContent = JSON.stringify(objects, undefined, 2);
-  const constants = generateTSEnum(enumName, objects, true);
+  const constants = [
+    constFieldTypeEnums,
+    generateTSEnum(enumName, objects, true),
+  ].filter(Boolean).join('\n\n');
 
   return { tsContent, jsonContent, constants };
 }
