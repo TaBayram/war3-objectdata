@@ -34,6 +34,7 @@ function generateProps(metaData: MappedData, weStrings: MappedDataRow): Prop[] {
     const displayName = <string>row.string("displayname");
     const profile = <string>row.string("slk") === "Profile"; // Used for strings.
     // TODO: notspecific is a blacklist
+
     const specific = row.string("usespecific")/* || row.string("notspecific")*/; // Used for abilities.
     let name = camelCase(<string>weStrings.string(displayName.toLowerCase()));
 
@@ -47,11 +48,13 @@ function generateProps(metaData: MappedData, weStrings: MappedDataRow): Prop[] {
       name += "Second";
     }
 
-    // Upgrade fields share the same name.
-    const conflict = props.find((prop) => prop.name === name);
+    /* // Upgrade fields share the same name.
+    const conflict = props.find((prop) => prop.name === name && prop.row.string("useitem") == row.string("useitem"));
     if (conflict) {
       name += (<string>row.string("effecttype") ?? id);
-    }
+    } */
+
+    if (name?.toLowerCase().includes("undefined")) debugger;
 
     // Crs fix
     let newId = id.padEnd(4, '\u0000');
@@ -63,7 +66,21 @@ function generateProps(metaData: MappedData, weStrings: MappedDataRow): Prop[] {
 }
 
 function generateTSInterface(name: string, props: Prop[]): string {
-  const tsInterface = `export interface ${name} extends IDs {\n${props
+  const uniqueProps: Prop[] = [];
+  for (const prop of props) {
+    if(uniqueProps.find((x)=> x.name == prop.name)) continue;
+    const dupProps = props.filter((x) => x.name == prop.name);
+    if (dupProps.length == 1) {
+      uniqueProps.push(prop);
+      continue;
+    }
+    const types = dupProps.map((x)=> x.tsType);
+    const mergedProp: Prop = {...prop, tsType: types.filter((item, pos) => types.indexOf(item) == pos).join(" | ")}
+
+    uniqueProps.push(mergedProp);
+  }
+
+  const tsInterface = `export interface ${name} extends IDs {\n${uniqueProps
     .map((prop) => `  ${prop.name}: ${prop.tsType};`)
     .join("\n")}\n}`;
   const outBaseProps = props
@@ -198,7 +215,6 @@ function getOEObjectName(object: OEObject, parentObject?: OEObject, useRace?: bo
   if (name) {
     name = pascalCase(name);
   }
-
   return name;
 }
 
