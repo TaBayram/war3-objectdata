@@ -200,13 +200,28 @@ export function saveModificationFile(
   return;
 }
 
-export function war3TypeToTS(type: string): "string" | "number" | "boolean" {
+export const WAR3_TYPE_ENUMS: Record<string, string> = {
+  weaponType: 'WeaponType',
+  attackType: 'AttackType',
+  defenseType: 'DefenseType',
+  moveType: 'MoveType',
+  movement: 'MoveType',
+  regenType: 'RegenType',
+  armorType: 'ArmorType',
+  detectionType: 'DetectionType',
+  attackBits: 'AttackBits',
+  attributeType: 'AttributeType',
+};
+
+export function war3TypeToTS(type: string): string {
   if (type === "string") {
     return "string";
   } else if (type === "int" || type === "unreal" || type === "real") {
     return "number";
   } else if (type === "bool") {
     return "boolean";
+  } else if (WAR3_TYPE_ENUMS[type]) {
+    return WAR3_TYPE_ENUMS[type];
   }
 
   console.warn(`Unhandled type: ${type}`);

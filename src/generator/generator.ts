@@ -8,6 +8,7 @@ import {
   war3ToDefaultTS,
   war3ToTS,
   war3TypeToTS,
+  WAR3_TYPE_ENUMS,
 } from "../utils";
 
 interface Prop {
@@ -20,6 +21,19 @@ interface Prop {
   profile: boolean;
   specific: string | undefined;
 }
+
+const TYPE_WE_PREFIX_MAP: Record<string, string> = {
+  weaponType: 'WEAPONTYPE',
+  attackType: 'ATTACKTYPE',
+  defenseType: 'DEFENSETYPE',
+  moveType: 'MOVETYPE',
+  movement: 'MOVETYPE',
+  regenType: 'REGENTYPE',
+  armorType: 'ARMORTYPE',
+  detectionType: 'DETECTIONTYPE',
+  attackBits: 'ATTACKBITS',
+  attributeType: 'ATTRIBUTETYPE',
+};
 
 type OEObject = Record<string, string | number | boolean | object>;
 type OEObjects = Record<string, OEObject>;
@@ -250,6 +264,48 @@ function generateTSEnum(name: string, objects: OEObjects, constant: boolean): st
     .join("\n")}\n}`;
 }
 
+function generateFieldTypeEnums(weStrings: MappedDataRow, neededTypes: Set<string>): string {
+  const enumDefs: string[] = [];
+
+  for (const [war3Type, wePrefix] of Object.entries(TYPE_WE_PREFIX_MAP)) {
+    if (!neededTypes.has(war3Type)) continue;
+
+    const tsName = WAR3_TYPE_ENUMS[war3Type];
+    if (!tsName) continue;
+
+    const entries: { name: string; value: string }[] = [];
+    const searchPrefix = `westring_ue_${wePrefix.toLowerCase()}_`;
+
+    for (const [key, displayName] of Object.entries(weStrings.map)) {
+      if (key.startsWith(searchPrefix)) {
+        const suffix = key.slice(searchPrefix.length);
+        const memberName = pascalCase(displayName);
+        const memberValue = suffix.toLowerCase();
+        entries.push({ name: memberName, value: memberValue });
+      }
+    }
+
+    if (entries.length > 0) {
+      enumDefs.push(`export const enum ${tsName} {\n${entries
+        .map(e => `  ${e.name} = '${e.value}',`)
+        .sort()
+        .join('\n')}\n}`);
+    }
+  }
+
+  return enumDefs.join('\n\n');
+}
+
+function getNeededEnumTypes(props: Prop[]): Set<string> {
+  const needed = new Set<string>();
+  for (const prop of props) {
+    if (WAR3_TYPE_ENUMS[prop.type]) {
+      needed.add(prop.type);
+    }
+  }
+  return needed;
+}
+
 function handleWrongCapitalization(id: string) {
   if (id === "Ytsc") {
     return "YTsc";
@@ -389,7 +445,8 @@ function generateOutput(
   type: string,
   props: Prop[],
   objects: OEObjects,
-  abilities: boolean
+  abilities: boolean,
+  weStrings: MappedDataRow
 ): GeneratedObjects {
   const interfaceName = type;
   const enumName = enumForType(type);
@@ -401,6 +458,10 @@ function generateOutput(
   } else {
     interfaces = generateTSInterface(interfaceName, props);
   }
+
+  const neededEnumTypes = getNeededEnumTypes(props);
+  const fieldTypeEnums = generateFieldTypeEnums(weStrings, neededEnumTypes);
+
   const tsContent = [
     [
       `import { readFileSync } from 'fs';`,
@@ -408,6 +469,7 @@ function generateOutput(
       `// @ts-ignore`,
       `const jsonData = require('./${fileName}data.json');`,
     ].join("\n"),
+    ...(fieldTypeEnums ? [`\n${fieldTypeEnums}`] : []),
     `
 
 const OBJECTS = Object.freeze(jsonData);
@@ -510,17 +572,18 @@ export async function objectDataGenerator({
   );
 
   return {
-    units: generateOutput("Unit", unitProps, units, false),
-    items: generateOutput("Item", itemProps, items, false),
+    units: generateOutput("Unit", unitProps, units, false, weStrings),
+    items: generateOutput("Item", itemProps, items, false, weStrings),
     destructables: generateOutput(
       "Destructable",
       destructableProps,
       destructables,
-      false
+      false,
+      weStrings
     ),
-    doodads: generateOutput("Doodad", doodadProps, doodads, false),
-    abilities: generateOutput("Ability", abilityProps, abilities, true),
-    buffs: generateOutput("Buff", buffProps, buffs, false),
-    upgrades: generateOutput("Upgrade", upgradeProps, upgrades, false),
+    doodads: generateOutput("Doodad", doodadProps, doodads, false, weStrings),
+    abilities: generateOutput("Ability", abilityProps, abilities, true, weStrings),
+    buffs: generateOutput("Buff", buffProps, buffs, false, weStrings),
+    upgrades: generateOutput("Upgrade", upgradeProps, upgrades, false, weStrings),
   };
 }

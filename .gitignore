@@ -4,3 +4,4 @@ src/generated
 deploy.ps1
 .vscode
 package-lock.json
+*.tgz
